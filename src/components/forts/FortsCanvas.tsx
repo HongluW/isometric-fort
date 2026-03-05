@@ -154,6 +154,8 @@ export function FortsCanvas({ selectedTile, setSelectedTile, isMobile = false, s
   const showUnderground = rawShowUnderground ?? false;
   const phase = rawPhase ?? 'build';
   const canControlMap = phase === 'build' || phase === 'repair';
+  // Zoom is allowed in all phases so view controls remain consistent
+  const canZoom = true;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const renderPendingRef = useRef<number | null>(null);
@@ -192,7 +194,7 @@ export function FortsCanvas({ selectedTile, setSelectedTile, isMobile = false, s
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // WASD movement — read phase from ref so loop always has current value
+  // WASD movement — allow during build/repair/defense, but never change tiles in defense
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -201,10 +203,10 @@ export function FortsCanvas({ selectedTile, setSelectedTile, isMobile = false, s
         return;
       }
       const k = e.key.toLowerCase();
-      if (!['w', 'a', 's', 'd'].includes(k)) return;
       const p = latestStateRef.current?.phase ?? 'build';
-      const allow = p === 'build' || p === 'repair';
-      if (!allow) return;
+      const allowPan = p === 'build' || p === 'repair' || p === 'defense';
+      if (!allowPan) return;
+      if (!['w', 'a', 's', 'd'].includes(k)) return;
       e.preventDefault();
       keysPressedRef.current.add(k);
     };
@@ -212,7 +214,7 @@ export function FortsCanvas({ selectedTile, setSelectedTile, isMobile = false, s
     let rafId: number;
     const loop = () => {
       const p = latestStateRef.current?.phase ?? 'build';
-      const allow = p === 'build' || p === 'repair';
+      const allow = p === 'build' || p === 'repair' || p === 'defense';
       if (allow && keysPressedRef.current.size > 0) {
         const mx = (keysPressedRef.current.has('a') ? panSpeed : 0) - (keysPressedRef.current.has('d') ? panSpeed : 0);
         const my = (keysPressedRef.current.has('w') ? panSpeed : 0) - (keysPressedRef.current.has('s') ? panSpeed : 0);
@@ -315,7 +317,7 @@ export function FortsCanvas({ selectedTile, setSelectedTile, isMobile = false, s
 
   // Zoom to cursor
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (!canControlMap) {
+    if (!canZoom) {
       e.preventDefault();
       return;
     }
@@ -344,7 +346,7 @@ export function FortsCanvas({ selectedTile, setSelectedTile, isMobile = false, s
 
     setZoom(nz);
     setOffset({ x: (canvasX / (dpr * nz) - sx) * nz, y: (canvasY / (dpr * nz) - sy) * nz });
-  }, [zoom, offset, canControlMap]);
+  }, [zoom, offset, canZoom]);
 
   // Touch handlers
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -680,7 +682,6 @@ export function FortsCanvas({ selectedTile, setSelectedTile, isMobile = false, s
     <div
       ref={containerRef}
       className="w-full h-full max-w-full max-h-full relative overflow-hidden mx-auto"
-      style={{ pointerEvents: canControlMap ? 'auto' : 'none' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

@@ -23,7 +23,9 @@ export const PHASE_ORDER: GamePhase[] = ['name_entry', 'card_draw', 'build', 'de
 
 export const BUILD_PHASE_DURATION_MS = 3 * 60 * 1000; // 3 minutes
 export const CARD_DRAW_DURATION_MS = 15 * 1000;       // 15 sec placeholder (manual advance for now)
-export const DEFENSE_PHASE_DURATION_MS = 30 * 1000;   // 30 sec placeholder for siege
+export const DEFENSE_PHASE_DURATION_MS = 30 * 1000;   // legacy / fallback
+/** Max real-time siege duration; phase ends when attackers are cleared or this time is reached. */
+export const DEFENSE_PHASE_MAX_MS = 3 * 60 * 1000;    // 3 minutes
 export const REPAIR_PHASE_DURATION_MS = 60 * 1000;   // 1 min to repair (or manual advance)
 export const ROUND_END_DURATION_MS = 5 * 1000;        // 5 sec transition
 
