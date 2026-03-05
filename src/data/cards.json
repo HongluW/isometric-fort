@@ -1,0 +1,75 @@
+[
+  {
+    "id": "terrain_moat_common",
+    "name": "Moat (Common)",
+    "rarity": "common",
+    "category": "terrain",
+    "description": "Place moat segments to slow attackers. Common variant grants fewer segments.",
+    "playablePhase": "build",
+    "foodCost": 2,
+    "effectKey": "moat",
+    "buildBlocks": 4,
+    "unlockAtRound": 1
+  },
+  {
+    "id": "terrain_moat_unique",
+    "name": "Moat (Unique)",
+    "rarity": "unique",
+    "category": "terrain",
+    "description": "Extended moat segments. More coverage per card.",
+    "playablePhase": "build",
+    "foodCost": 4,
+    "effectKey": "moat",
+    "buildBlocks": 8,
+    "unlockAtRound": 1
+  },
+  {
+    "id": "terrain_moat_rare",
+    "name": "Moat (Rare)",
+    "rarity": "rare",
+    "category": "terrain",
+    "description": "Superior moat. Maximum segments for one card.",
+    "playablePhase": "build",
+    "foodCost": 6,
+    "effectKey": "moat",
+    "buildBlocks": 12,
+    "unlockAtRound": 2
+  },
+  {
+    "id": "building_stone_mason",
+    "name": "Stone Mason",
+    "rarity": "common",
+    "category": "buildings",
+    "description": "Unlocks the stone mason building. Produces stone over time.",
+    "playablePhase": "build",
+    "woodCost": 5,
+    "stoneCost": 3,
+    "effectKey": "stone_mason",
+    "unlockAtRound": 1
+  },
+  {
+    "id": "building_carpenter",
+    "name": "Carpenter",
+    "rarity": "common",
+    "category": "buildings",
+    "description": "Unlocks the carpenter building. Produces wood over time.",
+    "playablePhase": "build",
+    "woodCost": 4,
+    "stoneCost": 4,
+    "effectKey": "carpenter",
+    "unlockAtRound": 1
+  },
+  {
+    "id": "building_mess_hall",
+    "name": "Mess Hall",
+    "rarity": "common",
+    "category": "buildings",
+    "description": "Unlocks the mess hall building. Produces food over time.",
+    "playablePhase": "build",
+    "woodCost": 4,
+    "stoneCost": 3,
+    "foodCost": 2,
+    "effectKey": "mess_hall",
+    "unlockAtRound": 1
+  }
+]

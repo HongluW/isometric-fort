@@ -62,9 +62,11 @@ type FortsContextValue = {
   toggleFreeBuilder: () => void;
   activeCardId: CardId | null;
   remainingBuildBlocksFromCard: number | null;
+  /** Card ids chosen during card draw phase this run; only these are available. */
+  chosenCardIds: CardId[];
   playMoatCard: (cardId: CardId) => void;
   advanceFromNameEntry: (fortName: string) => void;
-  advanceFromCardDraw: () => void;
+  advanceFromCardDraw: (pickedCardIds: CardId[]) => void;
   advanceFromBuildTimeUp: () => void;
   advanceFromDefenseComplete: () => void;
   advanceFromRepairToNextRound: () => void;
@@ -234,14 +236,16 @@ export function FortsProvider({
     });
   }, [persistFortsSave]);
 
-  const advanceFromCardDraw = useCallback(() => {
+  const advanceFromCardDraw = useCallback((pickedCardIds: CardId[]) => {
     setState(prev => {
+      const existing = prev.chosenCardIds ?? [];
+      const merged = [...new Set([...existing, ...pickedCardIds])];
       const next: GameState = {
         ...prev,
+        chosenCardIds: merged,
         phase: 'build',
         phaseEndsAt: Date.now() + BUILD_PHASE_DURATION_MS,
       };
-      // Persist immediately so "chosen cards → build phase" is saved before user exits
       queueMicrotask(() => persistFortsSave(next));
       return next;
     });
@@ -477,6 +481,8 @@ export function FortsProvider({
             if (tile.building.type !== 'grass' && tile.building.type !== 'empty') return prev;
           }
           const cardId = tool === 'build_stone_mason' ? 'building_stone_mason' : tool === 'build_carpenter' ? 'building_carpenter' : 'building_mess_hall';
+          const chosen = prev.chosenCardIds ?? [];
+          if (!chosen.includes(cardId)) return prev;
           const card = CARD_DEFINITIONS[cardId];
           const woodCost = card?.woodCost ?? 0;
           const stoneCost = card?.stoneCost ?? 0;
@@ -596,11 +602,13 @@ export function FortsProvider({
   const playMoatCard = useCallback((cardId: CardId) => {
     const card = CARD_DEFINITIONS[cardId];
     if (!card || card.effectKey !== 'moat') return;
-    const foodCost = card.foodCost ?? 0;
 
     setState(prev => {
       if (!prev) return prev;
+      const chosen = prev.chosenCardIds ?? [];
+      if (!chosen.includes(cardId)) return prev;
 
+      const foodCost = card.foodCost ?? 0;
       const sameCardActive =
         prev.activeCardId === card.id &&
         prev.remainingBuildBlocksFromCard != null &&
@@ -678,6 +686,7 @@ export function FortsProvider({
     toggleFreeBuilder,
     activeCardId: state.activeCardId ?? null,
     remainingBuildBlocksFromCard: state.remainingBuildBlocksFromCard ?? null,
+    chosenCardIds: state.chosenCardIds ?? [],
     playMoatCard,
     advanceFromNameEntry,
     advanceFromCardDraw,

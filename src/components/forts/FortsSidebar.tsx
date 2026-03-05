@@ -8,12 +8,22 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExpandableCategoryPanel, type ExpandableCategoryItem } from '@/components/ui/expandable-category-panel';
 import { X, LogOut } from 'lucide-react';
 import { CARD_DEFINITIONS, type CardDefinition } from '@/games/forts/types/cards';
+import type { CardId } from '@/games/forts/types/cards';
 
-const MOAT_CARD_IDS = ['terrain_moat_common', 'terrain_moat_unique', 'terrain_moat_rare'] as const;
-const MOAT_CARDS: CardDefinition[] = MOAT_CARD_IDS.map((id) => CARD_DEFINITIONS[id]).filter(Boolean);
+/** Moat card definitions (effectKey === 'moat'). Shown in sidebar only if chosen during card draw. */
+const ALL_MOAT_CARDS: CardDefinition[] = Object.values(CARD_DEFINITIONS).filter(
+  (c) => c.effectKey === 'moat'
+);
 
-const RESOURCE_BUILDING_IDS = ['building_stone_mason', 'building_carpenter', 'building_mess_hall'] as const;
-const RESOURCE_BUILDINGS: CardDefinition[] = RESOURCE_BUILDING_IDS.map((id) => CARD_DEFINITIONS[id]).filter(Boolean);
+/** Resource-building card definitions. Shown in sidebar only if chosen during card draw. */
+const ALL_RESOURCE_BUILDINGS: CardDefinition[] = Object.values(CARD_DEFINITIONS).filter(
+  (c) => c.effectKey && ['stone_mason', 'carpenter', 'mess_hall'].includes(c.effectKey)
+);
+
+function filterChosen(cards: CardDefinition[], chosenCardIds: CardId[]): CardDefinition[] {
+  const set = new Set(chosenCardIds);
+  return cards.filter((c) => set.has(c.id));
+}
 
 const TOOL_CATEGORIES: Record<string, Tool[]> = {
   tools: ['select', 'bulldoze', 'bulldoze_all'],
@@ -39,8 +49,10 @@ export function FortsSidebar({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { state, setTool, freeBuilderMode, activeCardId, remainingBuildBlocksFromCard, playMoatCard } = useForts();
+  const { state, setTool, freeBuilderMode, activeCardId, remainingBuildBlocksFromCard, chosenCardIds, playMoatCard } = useForts();
   const { selectedTool, stats } = state;
+  const moatCards = filterChosen(ALL_MOAT_CARDS, chosenCardIds);
+  const resourceBuildings = filterChosen(ALL_RESOURCE_BUILDINGS, chosenCardIds);
   const roundBonusWood = state.roundBonusWood ?? 5;
   const roundBonusStone = state.roundBonusStone ?? 5;
   const roundBonusFood = state.roundBonusFood ?? 5;
@@ -159,7 +171,7 @@ export function FortsSidebar({
               Resources
             </h3>
             <div className="space-y-1">
-              {RESOURCE_BUILDINGS.map((card) => {
+              {resourceBuildings.map((card) => {
                 const wood = card.woodCost ?? 0;
                 const stone = card.stoneCost ?? 0;
                 const food = card.foodCost ?? 0;
@@ -203,7 +215,7 @@ export function FortsSidebar({
               Moat Cards
             </h3>
             <div className="space-y-1">
-              {MOAT_CARDS.map((card) => {
+              {moatCards.map((card) => {
                 const isActive = activeCardId === card.id;
                 const foodCost = card.foodCost ?? 0;
                 const canAfford = freeBuilderMode || stats.food >= foodCost;

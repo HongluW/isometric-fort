@@ -98,13 +98,22 @@ export interface CardDefinition {
   effectKey?: string;
   /** Optional: for terrain (e.g. moat), number of blocks you can build out when this card is used */
   buildBlocks?: number;
+  /** Round at which this card becomes available in the card draw phase (1 = from round 1). */
+  unlockAtRound?: number;
 }
 
 // =============================================================================
-// CARD REGISTRY (add concrete cards here as needed)
+// CARD REGISTRY (loaded from src/data/cards.json)
 // =============================================================================
 
-export const CARD_DEFINITIONS: Record<CardId, CardDefinition> = {};
+import {
+  CARD_DEFINITIONS as _CARD_DEFINITIONS,
+  getCardDefinitions,
+  getCardsUnlockedAtRound,
+} from '../data/cardsData';
+
+export const CARD_DEFINITIONS = _CARD_DEFINITIONS;
+export { getCardDefinitions, getCardsUnlockedAtRound };
 
 export function getCardsByRarity(rarity: CardRarity): CardDefinition[] {
   return Object.values(CARD_DEFINITIONS).filter((c) => c.rarity === rarity);

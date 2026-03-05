@@ -115,6 +115,7 @@ export function createInitialGameState(fortName?: string, gridSize?: number): Ga
     // Default wall variant is a wooden palisade.
     currentWallType: 'palisade',
     showUnderground: false,
+    chosenCardIds: [],
   };
 }
 

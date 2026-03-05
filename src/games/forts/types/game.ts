@@ -166,6 +166,8 @@ export interface GameState {
   currentWallType?: WallType;
   /** When true, canvas shows underground layer and underground tools place below ground. */
   showUnderground?: boolean;
+  /** Card ids chosen/pulled during the card draw phase this run. Only these cards are available until the run ends. */
+  chosenCardIds?: CardId[];
 }
 
 /** Starting health for the main base (start zone). */
