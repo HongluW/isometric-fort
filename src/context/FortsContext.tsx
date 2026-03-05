@@ -20,6 +20,8 @@ import {
   calculateFortStats,
   runSiegeDamage,
   repairTile as repairTileSim,
+  createSiegeStateForRound,
+  stepSiege,
 } from '@/core/forts';
 import { getFortBuildableKeys } from '@/games/forts/lib/fortBoundary';
 import { CARD_DEFINITIONS } from '@/games/forts/types/cards';
@@ -75,6 +77,8 @@ type FortsContextValue = {
   setSelectedDamagedKey: (key: string | null) => void;
   showUnderground: boolean;
   setShowUnderground: (show: boolean) => void;
+  /** Advance siege simulation by dtMs during the defense phase. */
+  tickSiege: (dtMs: number) => void;
 };
 
 const FortsContext = createContext<FortsContextValue | null>(null);
@@ -252,13 +256,16 @@ export function FortsProvider({
   }, [persistFortsSave]);
 
   const advanceFromBuildTimeUp = useCallback(() => {
-    setState(prev => ({ ...prev, phase: 'defense' }));
+    setState(prev => {
+      const siegeState = createSiegeStateForRound(prev);
+      return { ...prev, siegeState, phase: 'defense' as const };
+    });
   }, []);
 
   const advanceFromDefenseComplete = useCallback(() => {
     setState(prev => {
       const { grid, damagedKeys } = runSiegeDamage(prev.grid, prev.gridSize);
-      return { ...prev, grid, phase: 'repair', damagedTiles: damagedKeys };
+      return { ...prev, grid, phase: 'repair', damagedTiles: damagedKeys, siegeState: undefined };
     });
   }, []);
 
@@ -659,6 +666,10 @@ export function FortsProvider({
     });
   }, []);
 
+  const tickSiege = useCallback((dtMs: number) => {
+    setState(prev => stepSiege(prev, dtMs));
+  }, []);
+
   const toggleFreeBuilder = useCallback(() => {
     setFreeBuilderMode(prev => {
       const newMode = !prev;
@@ -698,6 +709,7 @@ export function FortsProvider({
     setSelectedDamagedKey,
     showUnderground: state.showUnderground ?? false,
     setShowUnderground,
+    tickSiege,
   };
 
   return <FortsContext.Provider value={value}>{children}</FortsContext.Provider>;

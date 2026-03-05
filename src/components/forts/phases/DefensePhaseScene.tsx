@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { useForts } from '@/context/FortsContext';
 import { DEFENSE_PHASE_MAX_MS } from '@/games/forts/types/phases';
 
 const TICK_MS = 80;
-const SPEED_UP_THRESHOLD_MS = 2.5 * 60 * 1000; // 2.5 min — then speed up if units remain
-const MAX_SPEED_MULTIPLIER = 4;
 
 interface DefensePhaseSceneProps {
   round: number;
@@ -14,22 +12,13 @@ interface DefensePhaseSceneProps {
 }
 
 export function DefensePhaseScene({ round, onSiegeComplete }: DefensePhaseSceneProps) {
-  const { state } = useForts();
-  const defense = state.stats?.defense ?? 0;
+  const { state, tickSiege } = useForts();
   const baseHealth = state.baseHealth ?? 500;
-
-  const [attackers, setAttackers] = useState(0);
-  const [fortHealth, setFortHealth] = useState(0);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [speedMult, setSpeedMult] = useState(1);
+  const siege = state.siegeState;
 
   const completed = useRef(false);
   const startTime = useRef(0);
   const lastTick = useRef(0);
-  const attackersRef = useRef(0);
-  const fortHealthRef = useRef(0);
-  const speedMultRef = useRef(1);
-  const initialAttackersRef = useRef(0);
 
   const finish = useCallback(() => {
     if (completed.current) return;
@@ -38,18 +27,9 @@ export function DefensePhaseScene({ round, onSiegeComplete }: DefensePhaseSceneP
   }, [onSiegeComplete]);
 
   useEffect(() => {
-    const initialAttackers = Math.max(8, 10 + round * 6);
-    initialAttackersRef.current = initialAttackers;
-    setAttackers(initialAttackers);
-    setFortHealth(baseHealth);
-    setElapsedMs(0);
-    setSpeedMult(1);
     completed.current = false;
     startTime.current = Date.now();
     lastTick.current = Date.now();
-    attackersRef.current = initialAttackers;
-    fortHealthRef.current = baseHealth;
-    speedMultRef.current = 1;
   }, [round, baseHealth]);
 
   useEffect(() => {
@@ -63,43 +43,23 @@ export function DefensePhaseScene({ round, onSiegeComplete }: DefensePhaseSceneP
         return;
       }
 
-      let currentAttackers = attackersRef.current;
-      let currentFort = fortHealthRef.current;
-      const mult = speedMultRef.current;
-      const delta = Math.min(now - lastTick.current, 200) / 1000;
+      const delta = Math.min(now - lastTick.current, 200);
       lastTick.current = now;
+      tickSiege(delta);
 
-      setElapsedMs(totalElapsed);
-
-      const damageFromFort = defense * 0.12 * mult * delta;
-      currentAttackers = Math.max(0, currentAttackers - damageFromFort);
-      const damageFromAttackers = currentAttackers * 0.05 * delta;
-      currentFort = Math.max(0, currentFort - damageFromAttackers);
-
-      attackersRef.current = currentAttackers;
-      fortHealthRef.current = currentFort;
-      setAttackers(currentAttackers);
-      setFortHealth(currentFort);
-
-      if (currentAttackers <= 0) {
+      const updatedSiege = state.siegeState;
+      if (!updatedSiege || updatedSiege.completed) {
         finish();
-        return;
-      }
-
-      if (totalElapsed >= SPEED_UP_THRESHOLD_MS && mult < MAX_SPEED_MULTIPLIER) {
-        const next = Math.min(MAX_SPEED_MULTIPLIER, mult + 0.25);
-        speedMultRef.current = next;
-        setSpeedMult(next);
       }
     }, TICK_MS);
 
     return () => clearInterval(id);
-  }, [defense, finish]);
+  }, [finish, tickSiege, state.siegeState]);
 
+  const total = siege?.totalInitialUnits ?? 0;
+  const remaining = siege?.remainingUnits ?? 0;
   const attackerPercent =
-    initialAttackersRef.current > 0
-      ? Math.max(0, Math.min(100, (attackers / initialAttackersRef.current) * 100))
-      : 0;
+    total > 0 ? Math.max(0, Math.min(100, (remaining / total) * 100)) : 0;
 
   return (
     <div className="absolute inset-x-0 top-2 z-40 flex justify-center pointer-events-none">
@@ -132,7 +92,7 @@ export function DefensePhaseScene({ round, onSiegeComplete }: DefensePhaseSceneP
               <div
                 className="h-full bg-amber-500 transition-all duration-150"
                 style={{
-                  width: `${baseHealth > 0 ? Math.max(0, (fortHealth / baseHealth) * 100) : 0}%`,
+                  width: `${baseHealth > 0 && siege ? Math.max(0, (state.baseHealth ?? 0) / baseHealth * 100) : 0}%`,
                 }}
               />
             </div>

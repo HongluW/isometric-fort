@@ -5,6 +5,7 @@
 import type { BuildingType } from './buildings';
 import type { CardId } from './cards';
 import type { GamePhase } from './phases';
+import type { SiegeState } from './units';
 import { GridPosition } from '../lib/gridUtils';
 
 // =============================================================================
@@ -168,6 +169,8 @@ export interface GameState {
   showUnderground?: boolean;
   /** Card ids chosen/pulled during the card draw phase this run. Only these cards are available until the run ends. */
   chosenCardIds?: CardId[];
+  /** Siege state for the current defense phase (aggregated offensive units). */
+  siegeState?: SiegeState;
 }
 
 /** Starting health for the main base (start zone). */

@@ -674,6 +674,41 @@ export function FortsCanvas({ selectedTile, setSelectedTile, isMobile = false, s
       }
 
       ctx.restore();
+
+      // Siege unit markers (aggregate, per lane) during defense phase
+      const siege = latestStateRef.current?.siegeState;
+      if (siege && (latestStateRef.current?.phase ?? 'build') === 'defense') {
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        const lanes = siege.lanes;
+        const laneOffsets: Record<string, { dx: number; dy: number }> = {
+          north: { dx: 0, dy: -TILE_HEIGHT * 2 },
+          south: { dx: 0, dy: TILE_HEIGHT * 2 },
+          east: { dx: TILE_WIDTH * 2, dy: 0 },
+          west: { dx: -TILE_WIDTH * 2, dy: 0 },
+        };
+        const centerX = gridSize / 2;
+        const centerY = gridSize / 2;
+        for (const lane of lanes) {
+          const offset = laneOffsets[lane.id] ?? { dx: 0, dy: 0 };
+          for (const group of lane.groups) {
+            if (group.count <= 0) continue;
+            const t = Math.min(1.2, Math.max(0, group.progress));
+            const gx = centerX + (offset.dx / TILE_WIDTH) * t;
+            const gy = centerY + (offset.dy / TILE_HEIGHT) * t;
+            const { screenX: ux, screenY: uy } = gridToScreen(gx, gy);
+            let color = '#ef4444';
+            if (group.classId === 'archer') color = '#22c55e';
+            else if (group.classId === 'siege_ram') color = '#f97316';
+            const size = 4 + Math.min(10, group.count);
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(ux, uy - TILE_HEIGHT / 2, size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grid, gridSize, selectedTile, offset, zoom, spritePack, imagesLoaded, dragBuild.dragBuildPreview, selectedTool, hoveredTile, showUnderground]);
